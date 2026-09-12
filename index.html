@@ -415,7 +415,8 @@ function loadTemplate(msg=true){
   if(msg){renderPlan();savePlan();toast('Template loaded')}
 }
 function fmt(s){s=Math.max(0,s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
-function beep(n=3){try{const ac=new (window.AudioContext||window.webkitAudioContext)();for(let i=0;i<n;i++){const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=880;g.gain.value=.3;o.start(ac.currentTime+i*.25);o.stop(ac.currentTime+i*.25+.15)}}catch(e){}
+let AC=null;function audioOn(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}}
+function beep(n=3){try{const ac=AC||new (window.AudioContext||window.webkitAudioContext)();for(let i=0;i<n;i++){const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=880;g.gain.value=.3;o.start(ac.currentTime+i*.25);o.stop(ac.currentTime+i*.25+.15)}}catch(e){}
   if(navigator.vibrate)navigator.vibrate([200,100,200,100,200])}
 function renderClock(){
   const b=S.plan[cur],d=b&&S.drills.find(x=>x.id===b.drillId);
@@ -427,10 +428,11 @@ function renderClock(){
   $('startPause').textContent=running?'Pause':(remaining<=0&&b?'Next':'Start');
 }
 function goTo(i){cur=Math.max(0,Math.min(S.plan.length-1,i));remaining=(S.plan[cur]?.min||0)*60;renderPlan()}
-$('startPause').onclick=()=>{
+$('startPause').onclick=()=>{audioOn();
   if(!S.plan.length)return;
   if(remaining<=0&&!running){if(cur<S.plan.length-1)goTo(cur+1);return}
   running=!running;clearInterval(tick);
+  if(running&&navigator.wakeLock)navigator.wakeLock.request('screen').then(l=>{window._wl=l}).catch(()=>{});
   if(running)tick=setInterval(()=>{remaining--;if(remaining<=0){remaining=0;running=false;clearInterval(tick);beep()}renderClock()},1000);
   renderClock();
 };
