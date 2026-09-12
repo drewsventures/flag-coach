@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Coach Drew</title>
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1f5a2c">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{--field:#1f5a2c;--field-dark:#173f21;--chalk:#f5f2e6;--flag:#ff6a13;--flag-ink:#2a1206;--muted:#a9c0ad;--line:rgba(245,242,230,.22);--blue:#4aa3ff;--yellow:#ffd23f}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--field);color:var(--chalk);font-family:"Oswald","Arial Narrow",Impact,sans-serif;font-size:18px}
+  body{min-height:100vh;display:flex;flex-direction:column}
+  header{display:flex;align-items:baseline;justify-content:space-between;padding:14px 16px 6px}
+  header h1{margin:0;font-size:22px;font-weight:700}
+  header small{color:var(--muted);font-size:14px;font-weight:400}
+  nav{display:grid;grid-template-columns:repeat(6,1fr);border-top:2px solid var(--line);border-bottom:2px solid var(--line)}
+  nav button{background:none;border:0;color:var(--muted);font:inherit;font-size:14px;padding:12px 1px;cursor:pointer;border-bottom:4px solid transparent}
+  nav button.on{color:var(--chalk);border-bottom-color:var(--flag)}
+  button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--flag);outline-offset:2px}
+  main{flex:1;padding:16px;max-width:560px;width:100%;margin:0 auto}
+  section{display:none}section.on{display:block}
+  .btn{background:var(--flag);color:var(--flag-ink);border:0;border-radius:10px;font:inherit;font-weight:700;font-size:18px;padding:12px 16px;cursor:pointer}
+  .btn.ghost{background:transparent;color:var(--chalk);border:2px solid var(--line)}
+  .btn.sm{font-size:15px;padding:8px 12px}
+  .btn.tiny{font-size:14px;padding:5px 9px;border-radius:7px}
+  .btn:disabled{opacity:.4}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .stack{display:flex;flex-direction:column;gap:10px}
+  input,textarea,select{background:var(--field-dark);border:2px solid var(--line);color:var(--chalk);font:inherit;padding:8px 10px;border-radius:8px;width:100%;min-width:0;font-weight:400}
+  input[type=number]{width:84px;text-align:center}
+  textarea{min-height:70px;resize:vertical}
+  p.note{color:var(--muted);font-size:15px;font-weight:400;margin:6px 0 14px;line-height:1.35}
+  h2{font-size:20px;font-weight:700;margin:0 0 4px}
+  hr{border:0;border-top:2px solid var(--line);margin:18px 0}
+  .card{background:var(--field-dark);border-radius:12px;padding:12px}
+  .item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .item .name{flex:1;font-size:19px;font-weight:500;min-width:0}
+  .item .sub{color:var(--muted);font-size:13px;font-weight:400;line-height:1.3}
+  .item .num{font-size:30px;font-weight:700;min-width:44px;text-align:right}
+  .item .plus{width:54px;height:54px;border-radius:50%;font-size:28px;padding:0}
+  .item .minus,.item .icon{background:none;border:0;color:var(--muted);font:inherit;font-size:22px;cursor:pointer;width:36px;padding:0}
+  .pill{display:inline-block;border:2px solid var(--flag);color:var(--flag);border-radius:999px;padding:2px 10px;font-size:13px;font-weight:500}
+  .pill.grey{border-color:var(--line);color:var(--muted)}
+  .tally{display:flex;justify-content:space-between;align-items:baseline;margin:8px 0 4px}.tally b{font-size:22px}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:var(--flag);color:var(--flag-ink);padding:10px 18px;border-radius:999px;font-weight:700;opacity:0;transition:.25s;pointer-events:none;z-index:9}
+  .toast.show{opacity:1;transform:translateX(-50%)}
+  @media (prefers-reduced-motion:reduce){.toast{transition:none}}
+  /* practice runner */
+  .clock{text-align:center;padding:10px 0 4px}
+  .clock .t{font-size:104px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums}
+  .clock .t.warn{color:var(--yellow)}.clock .t.done{color:var(--flag)}
+  .clock .now{font-size:24px;font-weight:500;margin-top:4px}
+  .clock .next{color:var(--muted);font-size:15px;font-weight:400}
+  .planrow{display:grid;grid-template-columns:1fr auto auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+  .planrow.cur{color:var(--flag)}
+  .planrow .n{font-weight:500;font-size:17px}.planrow .d{color:var(--muted);font-size:14px;font-weight:400}
+  /* scoreboard */
+  .board{display:grid;gap:12px;margin-bottom:14px}
+  .board.two{grid-template-columns:1fr 1fr}.board.three{grid-template-columns:1fr 1fr 1fr}
+  .team{background:var(--field-dark);border-radius:14px;padding:10px 8px 12px;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .team input{text-align:center;font-size:17px;font-weight:500;background:transparent;border:0;border-bottom:2px solid var(--line);border-radius:0;padding:4px}
+  .score{font-size:96px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums}
+  .board.three .score{font-size:72px}
+  .team .plus{width:100%;font-size:28px;padding:14px 0;border-radius:12px}
+  .team .minus{background:none;border:0;color:var(--muted);font:inherit;font-size:15px;cursor:pointer;padding:4px 10px}
+  .team .who{font-size:14px;color:var(--muted);text-align:center;line-height:1.4;font-weight:400;min-height:20px}
+  .lead .score{color:var(--flag)}
+  /* playbook */
+  .fieldwrap{position:relative;background:#2a6b38;border:3px solid var(--chalk);border-radius:8px;touch-action:none;overflow:hidden}
+  canvas{display:block;width:100%;height:auto}
+  .tools{display:flex;gap:6px;margin:10px 0;flex-wrap:wrap}
+  .tools button.on{background:var(--chalk);color:var(--flag-ink)}
+  .playlist button{text-align:left}
+  .pb{display:grid;grid-template-columns:1fr auto auto;gap:8px 12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+  .pb .name{font-size:19px;font-weight:500}.pb .best{font-size:13px;color:var(--muted);font-weight:400}.pb .best b{color:var(--chalk);font-size:16px}
+  .subtabs{display:flex;gap:6px;margin-bottom:12px}
+  .subtabs button{flex:1}
+  .rules h3{font-size:17px;margin:14px 0 4px;color:var(--flag)}
+  .rules ul{margin:0;padding-left:18px;font-weight:400;font-size:16px;line-height:1.45}
+  .rules li{margin-bottom:5px}
+  .rules .key{background:var(--field-dark);border-left:4px solid var(--flag);padding:10px 12px;border-radius:0 10px 10px 0;margin-bottom:14px}
+  details summary{cursor:pointer;font-weight:500;padding:8px 0;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+</style>
+</head>
+<body>
+<header><h1>Coach Drew</h1><small id="saveState">saving…</small></header>
+<nav>
+  <button class="on" data-tab="practice">Practice</button>
+  <button data-tab="drills">Drills</button>
+  <button data-tab="plays">Plays</button>
+  <button data-tab="score">Score</button>
+  <button data-tab="kids">Kids</button>
+  <button data-tab="rules">Rules</button>
+</nav>
+<main>
+
+<!-- PRACTICE -->
+<section id="practice" class="on">
+  <div class="clock">
+    <div class="t" id="clockT">0:00</div>
+    <div class="now" id="clockNow">Build today's plan below</div>
+    <div class="next" id="clockNext"></div>
+  </div>
+  <div class="row" style="justify-content:center;margin:10px 0 16px">
+    <button class="btn ghost sm" id="prevBlock">Back</button>
+    <button class="btn" id="startPause" style="min-width:120px">Start</button>
+    <button class="btn ghost sm" id="nextBlock">Next</button>
+  </div>
+  <div class="row" style="margin-bottom:6px">
+    <h2 style="flex:1">Today's plan</h2>
+    <button class="btn tiny ghost" id="loadTemplate">Load template</button>
+    <button class="btn tiny ghost" id="clearPlan">Clear</button>
+  </div>
+  <div id="planList"></div>
+  <div class="row" style="margin-top:12px">
+    <select id="addDrillSel" style="flex:1"></select>
+    <input type="number" id="addDrillMin" value="8" min="1" aria-label="Minutes">
+    <button class="btn sm" id="addDrillBtn">Add</button>
+  </div>
+  <p class="note">Tap Start and the clock runs each block in order with a beep at the end. Use Next if a drill dies early.</p>
+</section>
+
+<!-- DRILLS -->
+<section id="drills">
+  <div class="row" style="margin-bottom:8px"><h2 style="flex:1">Drill library</h2><button class="btn tiny" id="newDrill">New drill</button></div>
+  <p class="note">Every drill has a score so it feels like a game. Tap one to see the setup and scoring.</p>
+  <div id="drillList"></div>
+</section>
+
+<!-- PLAYS -->
+<section id="plays">
+  <div class="row" style="margin-bottom:8px">
+    <input type="text" id="playName" placeholder="Play name" style="flex:1">
+    <button class="btn sm" id="runPlay">Run</button>
+    <button class="btn sm ghost" id="savePlay">Save</button>
+  </div>
+  <div class="fieldwrap"><canvas id="field" width="520" height="400"></canvas></div>
+  <textarea id="playTip" placeholder="How you'll explain it to the kids" style="margin-top:8px;min-height:48px"></textarea>
+  <div class="tools">
+    <button class="btn sm ghost on" data-tool="move">Move</button>
+    <button class="btn sm ghost" data-tool="route">Draw route</button>
+    <select id="ballTo" style="width:auto;flex:1"></select>
+  </div>
+  <div class="tools">
+    <button class="btn sm ghost" id="addO">+ Player</button>
+    <button class="btn sm ghost" id="addX">+ Defender</button>
+    <button class="btn sm ghost" id="undoRoute">Undo line</button>
+    <button class="btn sm ghost" id="clearField">Clear</button>
+  </div>
+  <p class="note">Tap Run to watch the play. To draw your own: start a route on a player so he follows it, pick who gets the ball, save.</p>
+  <h2>Playbook</h2>
+  <div class="stack playlist" id="playList"></div>
+</section>
+
+<!-- SCORE -->
+<section id="score">
+  <div class="row" style="margin-bottom:12px">
+    <button class="btn sm" id="shuffle">Shuffle teams</button>
+    <button class="btn sm ghost" id="teamCount">3 teams</button>
+    <button class="btn sm ghost" id="resetScore" style="margin-left:auto">Reset</button>
+  </div>
+  <div class="board two" id="board"></div>
+  <p class="note">Shuffle before every drill so nobody stays on the losing side. Tap a team name to rename it.</p>
+</section>
+
+<!-- KIDS -->
+<section id="kids">
+  <div class="subtabs">
+    <button class="btn sm ghost on" data-sub="hustle">Hustle</button>
+    <button class="btn sm ghost" data-sub="game">Game</button>
+    <button class="btn sm ghost" data-sub="awards">Awards</button>
+    <button class="btn sm ghost" data-sub="notes">Notes</button>
+    <button class="btn sm ghost" data-sub="roster">Roster</button>
+  </div>
+  <div id="sub-hustle">
+    <div class="tally"><span>Today's hustle points</span><b id="todayTotal">0</b></div>
+    <div id="hustleList"></div>
+    <p class="note">Say it out loud every time. Today's count resets tomorrow; the small number is the season total.</p>
+  </div>
+  <div id="sub-game" style="display:none">
+    <p class="note">Game day stats. Tap to add one. Long-press (or right-click) to undo. Today's number is on the button, season totals above it.</p>
+    <div id="gameList"></div>
+  </div>
+  <div id="sub-awards" style="display:none">
+    <h2>Game Ball</h2>
+    <p class="note">For hustle, not performance. Kids who haven't had it yet are marked.</p>
+    <div id="gameBallList"></div>
+    <hr>
+    <h2>Personal bests</h2>
+    <p class="note">Enter today's number after a station. The app keeps each kid's best.</p>
+    <div class="pb" style="border:0;padding-bottom:0;color:var(--muted);font-size:13px;font-weight:400"><span></span><span>Catches</span><span>Flag pulls</span></div>
+    <div id="pbList"></div>
+  </div>
+  <div id="sub-notes" style="display:none">
+    <p class="note">One line per kid: what to praise next week, what they're working on, parent stuff.</p>
+    <div class="stack" id="notesList"></div>
+  </div>
+  <div id="sub-roster" style="display:none">
+    <div class="stack" id="rosterList"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn sm ghost" id="addKid">Add a kid</button>
+      <button class="btn sm ghost" id="changePin">Change PIN</button><button class="btn sm ghost" id="wipe" style="margin-left:auto">Clear season stats</button>
+    </div>
+  </div>
+</section>
+
+<!-- RULES -->
+<section id="rules" class="rules">
+  <h2>Wilton Flag Rules: K, 1st, 2nd grade</h2>
+  <p class="note">5-on-5 NFL Flag with league tweaks. Condensed from wiltonyouthfootball.com; the site is the final word if a ref disagrees.</p>
+  <div class="key"><b>The five that decide games at this age</b>
+    <ul>
+      <li>The QB cannot run past the line with the ball. He can only throw or hand off. The kid who takes the handoff can run or throw.</li>
+      <li>Nobody rushes the QB. Defenders line up 7 yards back and can only come once a handoff happens.</li>
+      <li>No pitches or tosses. Every handoff must be hand to hand. A forward shovel pass is fine.</li>
+      <li>4 downs to cross midfield, then 3 downs to score. Start every drive at your own 5.</li>
+      <li>No blocking, screening, or running next to the ball carrier. Once he crosses the line, teammates near him stop moving.</li>
+    </ul></div>
+
+  <h3>Game and field</h3>
+  <ul>
+    <li>30 x 40 yard field. 1st and 2nd grade use the blue junior NFL Flag ball.</li>
+    <li>Two 20-minute halves, 5-minute halftime.</li>
+    <li>Coin toss: away team calls it. Winner picks offense or defense, loser picks direction. Team that started on defense gets the ball to open the second half.</li>
+    <li>Three 30-second timeouts per team per game.</li>
+    <li>Two coaches on the field for offense, one for defense.</li>
+    <li>4 vs 4 counts as a real game if a team only has four.</li>
+  </ul>
+
+  <h3>Equipment</h3>
+  <ul>
+    <li>Official NFL Flag belts. Belt color can't match or resemble the shorts.</li>
+    <li>Flags sit on the hips, poppers facing down and out, no belt strap hanging.</li>
+    <li>Cleats required, never metal. Gloves, elbow and knee pads, and soft-shell helmets are OK.</li>
+    <li>Jerseys tucked in. No jewelry. Hard-brim hats backwards only, beanies fine.</li>
+    <li>Refs check equipment at midfield before the game.</li>
+  </ul>
+
+  <h3>Scoring</h3>
+  <ul>
+    <li>Touchdown = 7 points. No extra point attempts in these divisions.</li>
+    <li>Safety = 2 points (ball carrier down in his own end zone, including a bad snap that lands in or past the end zone).</li>
+  </ul>
+
+  <h3>Offense</h3>
+  <ul>
+    <li>25 seconds to snap once the ball is spotted. One warning, then delay of game.</li>
+    <li>At least one player (the center) on the line, up to four. QB must be off the line.</li>
+    <li>No "no-run zones" in these divisions. Running is allowed anywhere.</li>
+    <li>Ball is spotted where the ball is when the flag gets pulled, not where the feet are.</li>
+    <li>QB has 7 seconds to throw.</li>
+    <li>All passes must reach or cross the line of scrimmage.</li>
+    <li>Center can snap from the side or between the legs.</li>
+    <li>4th down: "punt" and the other team starts at their 5; go for it and fail and they take over at the spot.</li>
+    <li>Once the ball is past the line, only that ball carrier can have it until the whistle.</li>
+    <li>Fumbled center-QB exchange: play is dead, re-snap, no lost down.</li>
+    <li>No jumping, leaping, or hurdling. Play is dead where the runner left the ground.</li>
+  </ul>
+
+  <h3>Defense and rushing</h3>
+  <ul>
+    <li>No rushing the QB, ever. Rushers wait until a handoff.</li>
+    <li>Everyone lines up 7 yards off the line. Anyone can come after the handoff, no hand-raising needed.</li>
+    <li>Jump the snap and that player can't rush on that play.</li>
+    <li>Inside the 5, defenders can line up on the goal line instead of 7 yards back.</li>
+  </ul>
+
+  <h3>Flag pulling</h3>
+  <ul>
+    <li>Only a legal pull when the runner has full possession.</li>
+    <li>Defenders can dive for flags but can't tackle, hold, or run through the runner.</li>
+    <li>Never strip or grab the ball.</li>
+    <li>Flag falls off on its own: runner is down where the flag lands.</li>
+    <li>A player with one or zero flags who gets the ball is down on the spot.</li>
+    <li>No pulling flags off a player who doesn't have the ball.</li>
+    <li>Flag guarding (stiff arm, dropping a hand, arm, shoulder or head to cover flags, tucking jersey over flags) is a penalty.</li>
+  </ul>
+
+  <h3>Overtime</h3>
+  <ul>
+    <li>Coin flip, home team calls. Winner picks first or second. First team goes for 1 from the 5 or 2 from the 10.</li>
+    <li>Each team gets one shot. Still tied: repeat, with the loser of the first flip choosing order.</li>
+    <li>Third OT: each team starts at its own 5, most yards gained wins.</li>
+  </ul>
+
+  <h3>Conduct</h3>
+  <ul>
+    <li>Intentional tackling, elbowing, cheap shots, blocking, or any unsportsmanlike act: game stops, player may be ejected, no appeals.</li>
+    <li>No offensive or confrontational language from anyone, including coaches.</li>
+    <li>Runners must try to avoid defenders who have position. Defenders must give receivers a free release off the line.</li>
+    <li>Unsportsmanlike penalty: defense gives 10 yards and a first down; offense loses 10 and a down. Two on the same person = out of the game.</li>
+    <li>League goal is safe and fun. Reckless or intentional contact gets reported to the board.</li>
+  </ul>
+</section>
+
+</main>
+<div class="toast" id="toast"></div>
+<div id="pinOverlay" style="display:none;position:fixed;inset:0;background:var(--field);z-index:20;align-items:center;justify-content:center;padding:24px">
+  <div style="max-width:320px;width:100%;text-align:center">
+    <h1 style="font-size:34px;margin:0 0 4px">Coach Drew</h1>
+    <p class="note" style="margin-bottom:18px">Enter the coach PIN to open the app.</p>
+    <input type="password" id="pinInput" inputmode="numeric" autocomplete="off" placeholder="PIN" style="font-size:28px;text-align:center;letter-spacing:.3em;margin-bottom:10px">
+    <button class="btn" id="pinBtn" style="width:100%">Open</button>
+    <p class="note" id="pinMsg" style="margin-top:10px;color:var(--yellow)"></p>
+  </div>
+</div>
+
+<script>
+/* ===== CONFIG ===== */
+const SB_URL='https://cjeqrogmivfshaolmnue.supabase.co';
+const SB_KEY='sb_publishable_K-37K-QGIWoqCoL8COHgkA_nSGZmV4i';
+const PIN_KEY='coach-pin';
+let PIN=localStorage.getItem(PIN_KEY)||'';
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+async function api(path,method='GET',body=null,prefer='return=representation'){
+  const r=await fetch(SB_URL+'/rest/v1/'+path,{method,headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'x-coach-pin':PIN,'Content-Type':'application/json',Prefer:prefer},body:body?JSON.stringify(body):null});
+  if(!r.ok){const t=await r.text();throw new Error(r.status+' '+t)}
+  const t=await r.text();return t?JSON.parse(t):null;
+}
+const uid=()=>Math.random().toString(36).slice(2,9);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function setSave(t){$('saveState').textContent=t}
+function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),1400)}
+let pending=0;
+function track(p){pending++;setSave('saving…');return p.then(r=>r,e=>{console.error(e);toast('Save failed: '+e.message.slice(0,60));throw e}).finally(()=>{pending--;if(!pending)setSave('saved')})}
+
+/* ===== DATA ===== */
+const SEED_DRILLS=[
+ {name:'Coach Tag',skill:'Flag pulling, warm-up',minutes:5,how:'Coaches wear flags, kids chase. Score: flags pulled vs flags survived. Runs while stragglers arrive.'},
+ {name:'Flag Pull Gauntlet',skill:'Flag pulling, running to space',minutes:8,how:'One runner, 10-yard lane, two defenders. Runner 3 pts for reaching the end, defenders 1 pt per pull. Rotate every rep.'},
+ {name:'Catch Countdown',skill:'Catching',minutes:8,how:'Coach throws, kid catches, steps back each time. Team total catches in 3 min. Bonus point for any dive attempt.'},
+ {name:'Handoff Relay',skill:'Ball security, lining up',minutes:8,how:'Two lines. Run, hand off, next kid runs. First line done wins. Add a defender mid-season.'},
+ {name:'Route Runner',skill:'Routes',minutes:8,how:'Run a 5-yard out, catch in the cone box end zone. 1 pt per catch, 2 if in the box.'},
+ {name:'Snap and Go',skill:'Snap, handoff, plays',minutes:8,how:'Center snaps, QB hands off, runner scores past a cone. Rotate all three roles every rep.'},
+ {name:'Sideline Sprint',skill:'Pursuit angles',minutes:8,how:'Runner tries to get out of bounds, defenders must pull a flag first. 1 pt either way.'},
+ {name:'Scrimmage',skill:'Everything',minutes:15,how:'Coaches play QB for both sides. Every kid gets a carry or target before anyone gets a second. Run the same 3-4 plays.'},
+ {name:'Team vs Coach',skill:'Ending on a win',minutes:3,how:'Pull Coach\'s flag in 30 seconds. They always win. Huddle: one hustle callout, one teammate callout, hands in.'}
+];
+const TEMPLATE=['Coach Tag','Flag Pull Gauntlet','Catch Countdown','Handoff Relay','Scrimmage','Team vs Coach'];
+const FORM=()=>[{x:260,y:300,t:'C'},{x:260,y:345,t:'Q'},{x:150,y:300,t:'W'},{x:370,y:300,t:'W'},{x:200,y:340,t:'R'}];
+const R=(pid,pts)=>({pid,pts:pts.map(([x,y])=>({x,y}))});
+const SEED_PLAYS=[
+ {name:'Dive',tip:'Handoff straight up the middle. Runner: "take it and go." Teach this one first.',
+  routes:[R(4,[[200,340],[245,335],[255,240],[258,60]]),R(2,[[150,300],[150,60]]),R(3,[[370,300],[370,60]]),R(0,[[260,300],[310,230],[330,170]])],ball:[{type:'hand',to:4}]},
+ {name:'Sweep Right',tip:'Handoff, runner goes wide right then turns upfield. Tell him: "run to the cone, then run to the end zone."',
+  routes:[R(4,[[200,340],[290,338],[400,315],[450,200],[445,60]]),R(3,[[370,300],[330,240],[300,200]]),R(2,[[150,300],[150,60]]),R(0,[[260,300],[262,230]])],ball:[{type:'hand',to:4}]},
+ {name:'Sweep Left',tip:'Same play the other way. Runner lines up on the right side for this one.',
+  players:[{x:260,y:300,t:'C'},{x:260,y:345,t:'Q'},{x:150,y:300,t:'W'},{x:370,y:300,t:'W'},{x:320,y:340,t:'R'}],
+  routes:[R(4,[[320,340],[230,338],[120,315],[70,200],[75,60]]),R(2,[[150,300],[190,240],[220,200]]),R(3,[[370,300],[370,60]]),R(0,[[260,300],[258,230]])],ball:[{type:'hand',to:4}]},
+ {name:'Reverse',tip:'Runner sweeps right, hands off to the right receiver coming back left. Both kids yell "reverse!" on the handoff so they find each other.',
+  routes:[R(4,[[200,340],[290,340],[335,340]]),R(3,[[370,300],[400,340],[335,342],[200,345],[100,300],[70,160],[80,60]]),R(2,[[150,300],[150,60]]),R(0,[[260,300],[262,230]])],ball:[{type:'hand',to:4},{type:'hand',to:3}]},
+ {name:'Quick Out',tip:'Right receiver runs 5 yards, turns to the sideline. Easiest completion there is. QB throws as soon as he turns.',
+  routes:[R(3,[[370,300],[372,225],[480,220]]),R(1,[[260,345],[258,378]]),R(2,[[150,300],[150,255],[240,190]]),R(4,[[200,340],[110,350],[80,300]]),R(0,[[260,300],[262,250]])],ball:[{type:'pass',to:3,at:0.7}]},
+ {name:'Slant',tip:'Left receiver takes 3 steps up and cuts inside. QB throws to the spot in front of him.',
+  routes:[R(2,[[150,300],[152,250],[250,175]]),R(1,[[260,345],[258,378]]),R(3,[[370,300],[372,60]]),R(4,[[200,340],[290,340],[350,330]]),R(0,[[260,300],[262,250]])],ball:[{type:'pass',to:2,at:0.55}]},
+ {name:'Center Pop',tip:'Center snaps and runs straight ahead, QB flips it to him. Nobody covers the center at this age.',
+  routes:[R(0,[[260,300],[262,240],[266,120],[268,60]]),R(1,[[260,345],[258,370]]),R(2,[[150,300],[150,60]]),R(3,[[370,300],[370,60]]),R(4,[[200,340],[130,345]])],ball:[{type:'pass',to:0,at:0.5}]},
+ {name:'Go',tip:'Everybody runs deep. Low odds, huge celebration when it hits. Save it for when they need a spark.',
+  routes:[R(3,[[370,300],[378,150],[385,40]]),R(2,[[150,300],[142,150],[135,40]]),R(1,[[260,345],[258,385]]),R(4,[[200,340],[230,300],[240,150],[245,40]]),R(0,[[260,300],[310,220],[330,60]])],ball:[{type:'pass',to:3,at:0.9}]}
+].map((p,i)=>({name:p.name,tip:p.tip,sort:i,data:{players:p.players||FORM(),routes:p.routes,ball:p.ball}}));
+
+const S={players:[],drills:[],plays:[],events:[],plan:[],teams:[{name:'Orange',score:0,kids:[]},{name:'White',score:0,kids:[]},{name:'Green',score:0,kids:[]}],teamCount:2,kids:[]};
+const kidById=id=>S.kids.find(k=>k.id===id);
+function buildKids(){const t=today();
+  S.kids=S.players.map(p=>{const ev=S.events.filter(e=>e.player_id===p.id);const sum=(k,f)=>ev.filter(e=>e.kind===k&&(!f||f(e))).reduce((a,e)=>a+e.value,0);
+    const gb=ev.filter(e=>e.kind==='game_ball').map(e=>e.occurred_on).sort();
+    const mx=k=>Math.max(0,...ev.filter(e=>e.kind===k).map(e=>e.value));
+    return {id:p.id,name:p.name,parent:p.parent_name||'',phone:p.phone||'',email:p.email||'',note:p.note||'',
+      today:sum('hustle',e=>e.occurred_on===t),season:sum('hustle'),gameBalls:gb,bestCatch:mx('catches'),bestPull:mx('flag_pulls'),
+      g:{td:sum('game_td'),catch:sum('game_catch'),pull:sum('game_flag_pull'),int:sum('game_int'),
+         tdT:sum('game_td',e=>e.occurred_on===t),catchT:sum('game_catch',e=>e.occurred_on===t),pullT:sum('game_flag_pull',e=>e.occurred_on===t),intT:sum('game_int',e=>e.occurred_on===t)}}})}
+
+async function load(){
+  try{
+    const [players,drills,plays,events,state]=await Promise.all([api('players?select=*&order=sort,created_at'),api('drills?select=*&order=sort,created_at'),api('plays?select=*&order=sort,created_at'),api('stat_events?select=*&order=created_at'),api('app_state?select=*')]);
+    S.players=players;S.drills=drills;S.plays=plays;S.events=events;
+    const st=Object.fromEntries(state.map(r=>[r.key,r.value]));
+    if(st.teams){S.teams=st.teams.teams;S.teamCount=st.teams.teamCount}
+    if(!S.drills.length){S.drills=await track(api('drills','POST',SEED_DRILLS.map((d,i)=>({...d,sort:i}))))}
+    if(!S.plays.length){S.plays=await track(api('plays','POST',SEED_PLAYS))}
+    S.plan=st.plan||[];if(!S.plan.length)loadTemplate(false);
+    buildKids();render();setSave('saved');
+  }catch(e){console.error(e);if(String(e.message).includes('42501')||!PIN){showPin('Wrong PIN, try again')}else{setSave('offline');toast('Could not load: '+e.message.slice(0,50))}}
+}
+function showPin(msg){$('pinMsg').textContent=msg||'';$('pinOverlay').style.display='flex';setTimeout(()=>$('pinInput').focus(),50)}
+$('pinBtn').onclick=async()=>{PIN=$('pinInput').value.trim();try{const r=await api('players?select=id&limit=1');if(!r.length)throw new Error('no access');localStorage.setItem(PIN_KEY,PIN);$('pinOverlay').style.display='none';load()}catch(e){showPin('That PIN didn\'t work')}};
+$('pinInput').onkeydown=e=>{if(e.key==='Enter')$('pinBtn').click()};
+const saveState=(key,value)=>track(api('app_state?on_conflict=key','POST',{key,value,updated_at:new Date().toISOString()},'resolution=merge-duplicates,return=minimal'));
+const savePlan=()=>saveState('plan',S.plan);
+const saveTeams=()=>saveState('teams',{teams:S.teams,teamCount:S.teamCount});
+function addEvent(player_id,kind,value=1,session='practice'){const e={id:uid(),player_id,kind,value,session,occurred_on:today()};S.events.push(e);buildKids();
+  track(api('stat_events','POST',{player_id,kind,value,session,occurred_on:e.occurred_on})).then(r=>{if(r&&r[0])e.id=r[0].id}).catch(()=>{});return e}
+function removeLastEvent(player_id,kind,todayOnly=true){const t=today();const list=S.events.filter(e=>e.player_id===player_id&&e.kind===kind&&(!todayOnly||e.occurred_on===t));const e=list[list.length-1];if(!e)return false;
+  S.events=S.events.filter(x=>x!==e);buildKids();track(api('stat_events?id=eq.'+e.id,'DELETE',null,'return=minimal')).catch(()=>{});return true}
+
+/* tabs */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('main > section').forEach(s=>s.classList.toggle('on',s.id===b.dataset.tab));
+  if(b.dataset.tab==='plays')drawField();
+});
+document.querySelectorAll('.subtabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.subtabs button').forEach(x=>x.classList.toggle('on',x===b));
+  ['hustle','game','awards','notes','roster'].forEach(s=>$('sub-'+s).style.display=s===b.dataset.sub?'':'none');
+});
+
+/* ===== PRACTICE RUNNER ===== */
+let cur=0,remaining=0,running=false,tick=null;
+function loadTemplate(msg=true){
+  S.plan=TEMPLATE.map(n=>{const d=S.drills.find(x=>x.name===n);return d?{drillId:d.id,min:d.minutes}:null}).filter(Boolean);
+  cur=0;remaining=(S.plan[0]?.min||0)*60;running=false;clearInterval(tick);
+  if(msg){renderPlan();savePlan();toast('Template loaded')}
+}
+function fmt(s){s=Math.max(0,s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function beep(n=3){try{const ac=new (window.AudioContext||window.webkitAudioContext)();for(let i=0;i<n;i++){const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=880;g.gain.value=.3;o.start(ac.currentTime+i*.25);o.stop(ac.currentTime+i*.25+.15)}}catch(e){}
+  if(navigator.vibrate)navigator.vibrate([200,100,200,100,200])}
+function renderClock(){
+  const b=S.plan[cur],d=b&&S.drills.find(x=>x.id===b.drillId);
+  const t=$('clockT');t.textContent=fmt(remaining);
+  t.className='t'+(remaining<=0&&b?' done':remaining<=30&&b?' warn':'');
+  $('clockNow').textContent=d?d.name:'Build today\'s plan below';
+  const nb=S.plan[cur+1],nd=nb&&S.drills.find(x=>x.id===nb.drillId);
+  $('clockNext').textContent=nd?'Next: '+nd.name+' ('+nb.min+' min)':(b?'Last block':'');
+  $('startPause').textContent=running?'Pause':(remaining<=0&&b?'Next':'Start');
+}
+function goTo(i){cur=Math.max(0,Math.min(S.plan.length-1,i));remaining=(S.plan[cur]?.min||0)*60;renderPlan()}
+$('startPause').onclick=()=>{
+  if(!S.plan.length)return;
+  if(remaining<=0&&!running){if(cur<S.plan.length-1)goTo(cur+1);return}
+  running=!running;clearInterval(tick);
+  if(running)tick=setInterval(()=>{remaining--;if(remaining<=0){remaining=0;running=false;clearInterval(tick);beep()}renderClock()},1000);
+  renderClock();
+};
+$('nextBlock').onclick=()=>{running=false;clearInterval(tick);goTo(cur+1)};
+$('prevBlock').onclick=()=>{running=false;clearInterval(tick);goTo(cur-1)};
+$('loadTemplate').onclick=()=>loadTemplate();
+$('clearPlan').onclick=()=>{S.plan=[];cur=0;remaining=0;running=false;clearInterval(tick);renderPlan();savePlan()};
+$('addDrillBtn').onclick=()=>{const id=$('addDrillSel').value;if(!id)return;S.plan.push({drillId:id,min:+$('addDrillMin').value||5});if(S.plan.length===1)goTo(0);renderPlan();savePlan()};
+function renderPlan(){
+  const l=$('planList');l.innerHTML='';
+  S.plan.forEach((b,i)=>{const d=S.drills.find(x=>x.id===b.drillId);if(!d)return;
+    const r=document.createElement('div');r.className='planrow'+(i===cur?' cur':'');
+    r.innerHTML=`<div><div class="n">${esc(d.name)}</div><div class="d">${esc(d.skill)}</div></div>
+      <input type="number" value="${b.min}" min="1" aria-label="Minutes" style="width:64px">
+      <button class="btn tiny ghost" aria-label="Move up">↑</button><button class="btn tiny ghost" aria-label="Remove">✕</button>`;
+    const [inp,up,rm]=[r.querySelector('input'),...r.querySelectorAll('button')];
+    r.querySelector('.n').onclick=()=>{running=false;clearInterval(tick);goTo(i)};
+    inp.onchange=()=>{b.min=+inp.value||1;if(i===cur&&!running)remaining=b.min*60;renderPlan();savePlan()};
+    up.onclick=()=>{if(i>0){[S.plan[i-1],S.plan[i]]=[S.plan[i],S.plan[i-1]];renderPlan();savePlan()}};
+    rm.onclick=()=>{S.plan.splice(i,1);if(cur>=S.plan.length)cur=Math.max(0,S.plan.length-1);remaining=(S.plan[cur]?.min||0)*60;renderPlan();savePlan()};
+    l.appendChild(r)});
+  const total=S.plan.reduce((a,b)=>a+b.min,0);
+  if(S.plan.length){const t=document.createElement('p');t.className='note';t.textContent='Total: '+total+' minutes';l.appendChild(t)}
+  const sel=$('addDrillSel');sel.innerHTML=S.drills.map(d=>`<option value="${d.id}">${esc(d.name)}</option>`).join('');
+  sel.onchange=()=>{const d=S.drills.find(x=>x.id===sel.value);if(d)$('addDrillMin').value=d.minutes};
+  renderClock();
+}
+
+/* ===== DRILLS ===== */
+const patchDrill=d=>track(api('drills?id=eq.'+d.id,'PATCH',{name:d.name,skill:d.skill,minutes:d.minutes,how:d.how},'return=minimal'));
+function renderDrills(){
+  const l=$('drillList');l.innerHTML='';
+  S.drills.forEach(d=>{const w=document.createElement('details');w.className='card';w.style.marginBottom='8px';
+    w.innerHTML=`<summary>${esc(d.name)} <span class="pill grey">${d.minutes} min</span><div class="sub" style="color:var(--muted);font-size:13px;font-weight:400">${esc(d.skill)}</div></summary>
+      <div class="stack" style="margin-top:8px">
+        <input type="text" value="${esc(d.name)}" aria-label="Drill name">
+        <input type="text" value="${esc(d.skill)}" placeholder="Skill it teaches" aria-label="Skill">
+        <textarea aria-label="Setup and scoring">${esc(d.how)}</textarea>
+        <div class="row"><span style="color:var(--muted);font-size:14px">Default minutes</span><input type="number" value="${d.minutes}" min="1"><button class="btn tiny ghost" style="margin-left:auto">Delete</button></div>
+      </div>`;
+    const [n,sk,mn]=w.querySelectorAll('input'),how=w.querySelector('textarea');
+    n.onchange=()=>{d.name=n.value.trim()||d.name;renderDrills();renderPlan();patchDrill(d)};
+    sk.onchange=()=>{d.skill=sk.value;patchDrill(d)};how.onchange=()=>{d.how=how.value;patchDrill(d)};mn.onchange=()=>{d.minutes=+mn.value||1;patchDrill(d)};
+    w.querySelector('button').onclick=()=>{if(confirm('Delete '+d.name+'?')){S.drills=S.drills.filter(x=>x!==d);S.plan=S.plan.filter(b=>b.drillId!==d.id);renderDrills();renderPlan();track(api('drills?id=eq.'+d.id,'DELETE',null,'return=minimal'));savePlan()}};
+    l.appendChild(w)});
+}
+$('newDrill').onclick=async()=>{const r=await track(api('drills','POST',{name:'New drill',skill:'',minutes:8,how:'Setup: \nScoring: ',sort:-1}));S.drills.unshift(r[0]);renderDrills();renderPlan();$('drillList').firstChild.open=true};
+
+/* ===== PLAYBOOK ===== */
+const cv=$('field'),ctx=cv.getContext('2d');
+const SPEED=210;
+let play={players:FORM(),routes:[],ball:[]},tool='move',drag=null,curRoute=null,anim=null;
+function polyLen(pts){let l=0;for(let i=1;i<pts.length;i++)l+=Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y);return l}
+function along(pts,d){for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],s=Math.hypot(b.x-a.x,b.y-a.y);if(d<=s)return{x:a.x+(b.x-a.x)*d/s,y:a.y+(b.y-a.y)*d/s};d-=s}return pts[pts.length-1]}
+function livePos(){const p=play.players.map(q=>({x:q.x,y:q.y}));
+  if(anim){play.routes.forEach(r=>{if(r.pid==null||!p[r.pid])return;p[r.pid]=along(r.pts,anim.el*SPEED)})}return p}
+function drawField(){
+  const W=cv.width,H=cv.height;ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#2a6b38';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(245,242,230,.55)';ctx.lineWidth=2;
+  for(let y=40;y<H;y+=65){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+  ctx.fillStyle='rgba(255,106,19,.35)';ctx.fillRect(0,0,W,40);
+  ctx.strokeStyle='#f5f2e6';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,300);ctx.lineTo(W,300);ctx.stroke();
+  ctx.lineWidth=4;ctx.lineCap='round';ctx.lineJoin='round';ctx.globalAlpha=anim?.45:1;
+  play.routes.forEach(r=>{ctx.strokeStyle=r.color||'#ffd23f';ctx.beginPath();r.pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();
+    if(r.pts.length>1){const a=r.pts[r.pts.length-2],b=r.pts[r.pts.length-1],an=Math.atan2(b.y-a.y,b.x-a.x);ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x-12*Math.cos(an-.5),b.y-12*Math.sin(an-.5));ctx.moveTo(b.x,b.y);ctx.lineTo(b.x-12*Math.cos(an+.5),b.y-12*Math.sin(an+.5));ctx.stroke()}});
+  ctx.globalAlpha=1;
+  const pos=livePos();
+  play.players.forEach((p,i)=>{const q=pos[i];const hold=anim&&anim.holder===i&&!anim.flight;
+    ctx.beginPath();ctx.arc(q.x,q.y,18,0,7);ctx.fillStyle=p.t==='X'?'#12233a':(hold?'#ffd23f':'#f5f2e6');ctx.fill();ctx.lineWidth=3;ctx.strokeStyle=p.t==='X'?'#f5f2e6':'#ff6a13';ctx.stroke();
+    ctx.fillStyle=p.t==='X'?'#f5f2e6':'#2a1206';ctx.font='700 18px Oswald,Arial Narrow,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(p.t,q.x,q.y+1)});
+  if(anim){let b=anim.flight?anim.ballPos:(pos[anim.holder]||{x:0,y:0});if(!anim.flight)b={x:b.x+14,y:b.y-14};
+    ctx.beginPath();ctx.ellipse(b.x,b.y,9,6,-.6,0,7);ctx.fillStyle='#8b4a1e';ctx.fill();ctx.strokeStyle='#f5f2e6';ctx.lineWidth=1.5;ctx.stroke()}
+}
+function runPlay(){if(anim)return;const q=play.players.findIndex(p=>p.t==='Q');
+  const maxLen=Math.max(0,...play.routes.filter(r=>r.pid!=null).map(r=>polyLen(r.pts)));
+  anim={t0:performance.now(),el:0,holder:q<0?0:q,events:JSON.parse(JSON.stringify(play.ball||[])),flight:null,ballPos:null,dur:maxLen/SPEED+1.2};
+  $('runPlay').disabled=true;requestAnimationFrame(frame)}
+function frame(now){if(!anim)return;anim.el=(now-anim.t0)/1000;const pos=livePos();
+  const ev=anim.events[0];
+  if(ev&&!anim.flight){const tgt=pos[ev.to];
+    if(tgt&&ev.type==='hand'&&Math.hypot(tgt.x-pos[anim.holder].x,tgt.y-pos[anim.holder].y)<34){anim.holder=ev.to;anim.events.shift()}
+    else if(tgt&&ev.type==='pass'&&anim.el>=ev.at){const h=pos[anim.holder];anim.flight={from:{x:h.x,y:h.y},to:ev.to,t0:anim.el,d:Math.max(.35,Math.hypot(tgt.x-h.x,tgt.y-h.y)/420)}}}
+  if(anim.flight){const f=anim.flight,k=Math.min(1,(anim.el-f.t0)/f.d),tgt=pos[f.to];
+    anim.ballPos={x:f.from.x+(tgt.x-f.from.x)*k,y:f.from.y+(tgt.y-f.from.y)*k-Math.sin(k*Math.PI)*40};
+    if(k>=1){anim.holder=f.to;anim.flight=null;anim.events.shift()}}
+  drawField();
+  if(anim.el<anim.dur)requestAnimationFrame(frame);else{anim=null;$('runPlay').disabled=false;drawField()}}
+function pos(e){const r=cv.getBoundingClientRect(),t=e.touches?e.touches[0]:e;return{x:(t.clientX-r.left)*cv.width/r.width,y:(t.clientY-r.top)*cv.height/r.height}}
+function down(e){if(anim)return;e.preventDefault();const p=pos(e);
+  const near=play.players.findIndex(q=>Math.hypot(q.x-p.x,q.y-p.y)<28);
+  if(tool==='move'){drag=near>=0?play.players[near]:null;if(drag){drag._i=near;drag._last=p}}
+  else{const start=near>=0?{x:play.players[near].x,y:play.players[near].y}:p;
+    if(near>=0)play.routes=play.routes.filter(r=>r.pid!==near);
+    curRoute={pid:near>=0?near:null,color:['#ffd23f','#ff6a13','#4aa3ff','#f5f2e6'][play.routes.length%4],pts:[start]};play.routes.push(curRoute)}}
+function move(e){if(!drag&&!curRoute)return;e.preventDefault();const p=pos(e);
+  if(drag){const dx=p.x-drag._last.x,dy=p.y-drag._last.y;drag.x=p.x;drag.y=p.y;drag._last=p;
+    play.routes.forEach(r=>{if(r.pid===drag._i)r.pts.forEach(q=>{q.x+=dx;q.y+=dy})})}
+  else if(curRoute){const l=curRoute.pts[curRoute.pts.length-1];if(Math.hypot(l.x-p.x,l.y-p.y)>6)curRoute.pts.push(p)}
+  drawField()}
+function up(){if(curRoute&&curRoute.pts.length<3)play.routes.pop();if(drag){delete drag._i;delete drag._last}drag=null;curRoute=null;drawField()}
+cv.addEventListener('mousedown',down);cv.addEventListener('mousemove',move);window.addEventListener('mouseup',up);
+cv.addEventListener('touchstart',down,{passive:false});cv.addEventListener('touchmove',move,{passive:false});cv.addEventListener('touchend',up);
+document.querySelectorAll('.tools [data-tool]').forEach(b=>b.onclick=()=>{tool=b.dataset.tool;document.querySelectorAll('.tools [data-tool]').forEach(x=>x.classList.toggle('on',x===b))});
+$('runPlay').onclick=runPlay;
+$('addO').onclick=()=>{const t=prompt('Label (Q, C, W, R, or a kid\'s initial)','W');if(t!==null){play.players.push({x:260,y:250,t:t.slice(0,2).toUpperCase()||'W'});drawField()}};
+$('addX').onclick=()=>{play.players.push({x:260,y:200,t:'X'});drawField()};
+$('undoRoute').onclick=()=>{play.routes.pop();drawField()};
+$('clearField').onclick=()=>{play={players:FORM(),routes:[],ball:[]};$('playName').value='';$('playTip').value='';renderBallSel();drawField()};
+function renderBallSel(){const s=$('ballTo');const cur=play.ball?.[0];
+  s.innerHTML='<option value="">Ball: QB keeps</option>'+play.players.map((p,i)=>p.t==='Q'||p.t==='X'?'':`<option value="hand:${i}" ${cur?.type==='hand'&&cur.to===i?'selected':''}>Handoff to ${p.t} ${i}</option><option value="pass:${i}" ${cur?.type==='pass'&&cur.to===i?'selected':''}>Pass to ${p.t} ${i}</option>`).join('')}
+$('ballTo').onchange=e=>{const v=e.target.value;if(!v){play.ball=[];return}const [type,to]=v.split(':');play.ball=[type==='hand'?{type,to:+to}:{type,to:+to,at:.7}]};
+$('savePlay').onclick=async()=>{const n=$('playName').value.trim();if(!n){toast('Give the play a name');return}
+  const data=JSON.parse(JSON.stringify(play)),tip=$('playTip').value;
+  const ex=S.plays.find(p=>p.name===n);
+  if(ex){ex.data=data;ex.tip=tip;renderPlays();await track(api('plays?id=eq.'+ex.id,'PATCH',{data,tip},'return=minimal'))}
+  else{const r=await track(api('plays','POST',{name:n,tip,data,sort:S.plays.length}));S.plays.push(r[0]);renderPlays()}
+  toast('Saved: '+n)};
+function loadPlay(p){play=JSON.parse(JSON.stringify(p.data));play.ball=play.ball||[];$('playName').value=p.name;$('playTip').value=p.tip||'';renderBallSel();drawField();window.scrollTo({top:0})}
+function renderPlays(){const l=$('playList');l.innerHTML='';
+  if(!S.plays.length){l.innerHTML='<p class="note">No plays yet. Draw one above and save it.</p>';return}
+  S.plays.forEach(p=>{const r=document.createElement('div');r.className='row';
+    r.innerHTML=`<button class="btn ghost sm" style="flex:1">${esc(p.name)}</button><button class="btn sm">▶</button><button class="btn tiny ghost">Delete</button>`;
+    const [open,run,del]=r.querySelectorAll('button');
+    open.onclick=()=>loadPlay(p);run.onclick=()=>{loadPlay(p);setTimeout(runPlay,150)};
+    del.onclick=()=>{if(confirm('Delete '+p.name+'?')){S.plays=S.plays.filter(x=>x!==p);renderPlays();track(api('plays?id=eq.'+p.id,'DELETE',null,'return=minimal'))}};
+    l.appendChild(r)})}
+
+/* ===== SCOREBOARD ===== */
+function renderBoard(){
+  const n=S.teamCount,board=$('board');board.className='board '+(n===3?'three':'two');
+  const active=S.teams.slice(0,n),top=Math.max(...active.map(t=>t.score));board.innerHTML='';
+  active.forEach((t,i)=>{const d=document.createElement('div');d.className='team'+(t.score===top&&top>0?' lead':'');
+    d.innerHTML=`<input type="text" value="${esc(t.name)}" aria-label="Team name"><div class="score">${t.score}</div>
+      <button class="btn plus" aria-label="Add point">+1</button><button class="minus">undo</button>
+      <div class="who">${t.kids.map(id=>kidById(id)?.name).filter(Boolean).map(esc).join(', ')}</div>`;
+    d.querySelector('input').onchange=e=>{t.name=e.target.value||('Team '+(i+1));saveTeams()};
+    d.querySelector('.plus').onclick=()=>{t.score++;renderBoard();saveTeams()};
+    d.querySelector('.minus').onclick=()=>{if(t.score>0)t.score--;renderBoard();saveTeams()};
+    board.appendChild(d)});
+  $('teamCount').textContent=n===2?'3 teams':'2 teams';
+}
+$('teamCount').onclick=()=>{S.teamCount=S.teamCount===2?3:2;renderBoard();saveTeams()};
+$('resetScore').onclick=()=>{S.teams.forEach(t=>t.score=0);renderBoard();saveTeams()};
+$('shuffle').onclick=()=>{const ids=S.kids.map(k=>k.id).sort(()=>Math.random()-.5);S.teams.forEach(t=>{t.kids=[];t.score=0});ids.forEach((id,i)=>S.teams[i%S.teamCount].kids.push(id));renderBoard();saveTeams();toast('New teams')};
+
+/* ===== KIDS ===== */
+function renderHustle(){const l=$('hustleList');l.innerHTML='';
+  S.kids.forEach(k=>{const d=document.createElement('div');d.className='item';
+    d.innerHTML=`<div class="name">${esc(k.name)}<div class="sub">season ${k.season}</div></div><button class="minus" aria-label="Remove point">−</button><div class="num">${k.today}</div><button class="btn plus" aria-label="Hustle point">+</button>`;
+    d.querySelector('.plus').onclick=()=>{addEvent(k.id,'hustle');renderHustle();toast('Hustle point, '+k.name+'!')};
+    d.querySelector('.minus').onclick=()=>{if(removeLastEvent(k.id,'hustle'))renderHustle()};
+    l.appendChild(d)});
+  $('todayTotal').textContent=S.kids.reduce((a,k)=>a+k.today,0)}
+function renderGame(){const l=$('gameList');l.innerHTML='';
+  const cols=[['game_td','TD','td'],['game_catch','Catch','catch'],['game_flag_pull','Pull','pull'],['game_int','INT','int']];
+  S.kids.forEach(k=>{const d=document.createElement('div');d.className='card';d.style.marginBottom='8px';
+    d.innerHTML=`<div class="row" style="justify-content:space-between"><b style="font-size:19px;font-weight:500">${esc(k.name)}</b><span class="sub" style="color:var(--muted);font-size:13px">season: ${k.g.td} TD · ${k.g.catch} catch · ${k.g.pull} pulls · ${k.g.int} INT</span></div>
+      <div class="row" style="margin-top:8px">${cols.map(([kind,lab,key])=>`<button class="btn sm ghost" data-kind="${kind}" style="flex:1;display:flex;justify-content:space-between;gap:6px"><span>${lab}</span><b>${k.g[key+'T']}</b></button>`).join('')}</div>`;
+    d.querySelectorAll('button').forEach(b=>{b.onclick=()=>{addEvent(k.id,b.dataset.kind,1,'game');renderGame()};
+      let t;b.addEventListener('touchstart',()=>{t=setTimeout(()=>{if(removeLastEvent(k.id,b.dataset.kind))renderGame()},700)},{passive:true});b.addEventListener('touchend',()=>clearTimeout(t));b.addEventListener('contextmenu',e=>{e.preventDefault();if(removeLastEvent(k.id,b.dataset.kind))renderGame()})});
+    l.appendChild(d)})}
+function renderAwards(){const gb=$('gameBallList');gb.innerHTML='';
+  const minB=Math.min(...S.kids.map(k=>k.gameBalls.length));
+  S.kids.forEach(k=>{const d=document.createElement('div');d.className='item';
+    const last=k.gameBalls.length?new Date(k.gameBalls[k.gameBalls.length-1]+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}):'';
+    const tag=k.gameBalls.length===0?'<span class="pill">not yet</span>':(k.gameBalls.length===minB?'<span class="pill grey">due</span>':'');
+    d.innerHTML=`<div class="name">${esc(k.name)} ${tag}<div class="sub">${k.gameBalls.length} time${k.gameBalls.length===1?'':'s'}${last?', last '+last:''}</div></div><button class="btn sm">Give ball</button>`;
+    d.querySelector('button').onclick=()=>{addEvent(k.id,'game_ball');renderAwards();toast('Game ball: '+k.name)};gb.appendChild(d)});
+  const pb=$('pbList');pb.innerHTML='';
+  S.kids.forEach(k=>{const d=document.createElement('div');d.className='pb';
+    d.innerHTML=`<div class="name">${esc(k.name)}<div class="best">best <b>${k.bestCatch}</b> / <b>${k.bestPull}</b></div></div><input type="number" min="0" inputmode="numeric" placeholder="0" aria-label="Catches"><input type="number" min="0" inputmode="numeric" placeholder="0" aria-label="Flag pulls">`;
+    const [c,p]=d.querySelectorAll('input');
+    c.onchange=()=>{const v=+c.value||0;if(!v)return;const nb=v>k.bestCatch;addEvent(k.id,'catches',v);if(nb)toast(k.name+': new best!');renderAwards()};
+    p.onchange=()=>{const v=+p.value||0;if(!v)return;const nb=v>k.bestPull;addEvent(k.id,'flag_pulls',v);if(nb)toast(k.name+': new best!');renderAwards()};
+    pb.appendChild(d)})}
+const patchPlayer=(id,fields)=>track(api('players?id=eq.'+id,'PATCH',fields,'return=minimal'));
+function renderNotes(){const l=$('notesList');l.innerHTML='';
+  S.kids.forEach(k=>{const d=document.createElement('div');d.innerHTML=`<div style="font-weight:500;margin-bottom:4px">${esc(k.name)}</div><textarea placeholder="Praise next week / working on / parent notes">${esc(k.note)}</textarea>`;
+    d.querySelector('textarea').onchange=e=>{const p=S.players.find(x=>x.id===k.id);p.note=e.target.value;buildKids();patchPlayer(k.id,{note:p.note})};l.appendChild(d)})}
+function renderRoster(){const r=$('rosterList');r.innerHTML='';
+  S.players.forEach(p=>{const d=document.createElement('div');d.className='card';
+    const tel=(p.phone||'').replace(/[^\d+]/g,'');
+    d.innerHTML=`<div class="stack">
+      <input type="text" value="${esc(p.name)}" aria-label="Kid name" placeholder="Kid's name" style="font-weight:500;font-size:19px">
+      <input type="text" value="${esc(p.parent_name)}" aria-label="Parent name" placeholder="Parent name(s)">
+      <div class="row"><input type="tel" value="${esc(p.phone)}" aria-label="Parent phone" placeholder="Phone" style="flex:1"><input type="email" value="${esc(p.email)}" aria-label="Parent email" placeholder="Email" style="flex:1"></div>
+      <div class="row">
+        ${tel?`<a class="btn tiny ghost" href="tel:${tel}" style="text-decoration:none">Call</a><a class="btn tiny ghost" href="sms:${tel}" style="text-decoration:none">Text</a>`:''}
+        ${p.email?`<a class="btn tiny ghost" href="mailto:${esc(p.email)}" style="text-decoration:none">Email</a>`:''}
+        <button class="btn tiny ghost" style="margin-left:auto">Remove</button>
+      </div></div>`;
+    const [name,parent,phone,email]=d.querySelectorAll('input');
+    name.onchange=e=>{p.name=e.target.value.trim()||p.name;buildKids();render();patchPlayer(p.id,{name:p.name})};
+    parent.onchange=e=>{p.parent_name=e.target.value;buildKids();patchPlayer(p.id,{parent_name:p.parent_name})};
+    phone.onchange=e=>{p.phone=e.target.value;buildKids();renderRoster();patchPlayer(p.id,{phone:p.phone})};
+    email.onchange=e=>{p.email=e.target.value;buildKids();renderRoster();patchPlayer(p.id,{email:p.email})};
+    d.querySelector('button').onclick=()=>{if(confirm('Remove '+p.name+' and all their stats?')){S.players=S.players.filter(x=>x!==p);S.events=S.events.filter(e=>e.player_id!==p.id);S.teams.forEach(t=>t.kids=t.kids.filter(id=>id!==p.id));buildKids();render();track(api('players?id=eq.'+p.id,'DELETE',null,'return=minimal'));saveTeams()}};
+    r.appendChild(d)});
+  const all=S.players.map(k=>k.email).filter(Boolean);
+  if(all.length){const a=document.createElement('a');a.className='btn sm';a.style.textDecoration='none';a.style.display='inline-block';a.href='mailto:?bcc='+all.join(',');a.textContent='Email all parents';r.appendChild(a)}}
+$('addKid').onclick=async()=>{const r=await track(api('players','POST',{name:'Player '+(S.players.length+1),sort:S.players.length+1}));S.players.push(r[0]);buildKids();render()};
+$('wipe').onclick=()=>{if(confirm('Clear ALL season stats (hustle, game balls, bests, game stats)? Names, contacts, drills and plays are kept.')){S.events=[];S.teams.forEach(t=>{t.score=0;t.kids=[]});buildKids();render();track(api('stat_events?id=not.is.null','DELETE',null,'return=minimal'));saveTeams()}};
+$('changePin').onclick=()=>{localStorage.removeItem(PIN_KEY);PIN='';showPin('Enter the coach PIN')};
+
+function render(){renderPlan();renderDrills();renderPlays();renderBallSel();drawField();renderBoard();renderHustle();renderGame();renderAwards();renderNotes();renderRoster()}
+if(!PIN)showPin('Enter the coach PIN');else load();
+</script>
+</body>
+</html>
